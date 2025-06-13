@@ -1,0 +1,11 @@
+{
+  "name": "telegram-yookassa-bot",
+  "version": "1.0.0",
+  "description": "Telegram bot with YooKassa integration",
+  "main": "bot.py",
+  "scripts": {
+    "start": "python3 bot.py"
+  },
+  "license": "MIT",
+  "dependencies": {}
+}
