@@ -1,16 +1,17 @@
-
 import logging
+import os
 import requests
 from aiogram import Bot, Dispatcher, types, executor
-import os
+from dotenv import load_dotenv
 
-API_TOKEN=7585735042:AAHOvMiXV64MlD7V2o3JE6cfnguy5MV7VkY
-SHOP_ID=1106340
-SECRET_KEY=test_UbnO_aFtGDmUGqjjZHWWpq24eUORop6eIU70nwBezMs
+load_dotenv()
+
+API_TOKEN = os.getenv("API_TOKEN")
+SHOP_ID = os.getenv("SHOP_ID")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
-
 logging.basicConfig(level=logging.INFO)
 
 products = {
@@ -32,8 +33,7 @@ async def send_welcome(message: types.Message):
 async def check_payment(message: types.Message):
     args = message.text.split()
     if len(args) != 2:
-        await message.answer("Пожалуйста, отправь команду в формате:
-/check <payment_id>")
+        await message.answer("Отправь команду в формате:\n/check <payment_id>")
         return
     payment_id = args[1]
     result = check_payment_status(payment_id)
@@ -42,14 +42,14 @@ async def check_payment(message: types.Message):
         return
     user_id = message.from_user.id
     if user_id not in user_orders:
-        await message.answer("Не найдено связанного заказа. Сначала выбери товар и оплати.")
+        await message.answer("Не найден заказ. Сначала выбери товар.")
         return
     product_id = user_orders[user_id]
     product = products.get(product_id)
     if not product:
-        await message.answer("Произошла ошибка. Свяжитесь с администратором.")
+        await message.answer("Ошибка. Свяжись с админом.")
         return
-    await message.answer(f"Оплата подтверждена!\nВот ваша ссылка: {product['url']}")
+    await message.answer(f"Оплата подтверждена!\nСсылка на арт: {product['url']}")
     del user_orders[user_id]
 
 @dp.message_handler()
@@ -59,10 +59,9 @@ async def handle_product_choice(message: types.Message):
         if product['name'] in text:
             user_orders[message.from_user.id] = pid
             payment_link = create_payment_link(pid, product)
-            await message.answer(f"Перейди по ссылке для оплаты:\n{payment_link}\n\n"
-                                 f"После оплаты пришли мне команду с номером платежа:\n/check <payment_id>")
+            await message.answer(f"Ссылка для оплаты:\n{payment_link}\n\nПосле оплаты пришли /check <payment_id>")
             return
-    await message.answer("Не распознал команду. Пожалуйста, выбери товар из списка.")
+    await message.answer("Не понял команду. Выбери товар из списка.")
 
 def create_payment_link(product_id, product):
     return (f"https://yookassa.ru/pay?shopId={SHOP_ID}&amount={product['price']}"
@@ -74,8 +73,7 @@ def check_payment_status(payment_id):
         response = requests.get(url, auth=(SHOP_ID, SECRET_KEY))
         if response.status_code == 200:
             data = response.json()
-            if data.get("status") == "succeeded":
-                return True
+            return data.get("status") == "succeeded"
         return False
     except Exception as e:
         logging.error(f"Ошибка при проверке оплаты: {e}")
